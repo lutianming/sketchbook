@@ -17,7 +17,8 @@ void draw() {
 
 Place places[];
 void readData() {
-  String[] lines = loadStrings("http://www.telecom-paristech.fr/~eagan/class/as2013/inf229/data/population.tsv");
+  //String[] lines = loadStrings("http://www.telecom-paristech.fr/~eagan/class/as2013/inf229/data/population.tsv");
+  String[] lines = loadStrings("population.tsv");
   parseInfo(lines[0]);
 
   places = new Place[numPoints];
