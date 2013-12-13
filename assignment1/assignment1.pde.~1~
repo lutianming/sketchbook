@@ -1,0 +1,82 @@
+void setup() {
+  size(800, 800);
+  readData();
+  //labelFont = loadFont("/* font filename from above */");
+  //textFont(labelFont, 32); 
+}
+
+void draw() {
+  background(255);
+  color black = color(0);
+  for (int i = 0; i < numPoints; ++i) {
+    Place p = places[i];
+    p.draw();
+  }
+}
+
+Place places[];
+void readData() {
+  String[] lines = loadStrings("http://www.telecom-paristech.fr/~eagan/class/as2013/inf229/data/population.tsv");
+  parseInfo(lines[0]);
+
+  places = new Place[numPoints];
+  for (int i = 0; i < numPoints; ++i) {
+    String pieces[] = split(lines[i+2], '\t');
+    places[i] = new Place();
+    Place p = places[i];
+    p.postalCode = int(pieces[0]);
+    p.x = float(pieces[1]);
+    p.y = float(pieces[2]);
+    p.name = pieces[4];
+    p.population = int(pieces[5]);
+    p.density = int(pieces[6]);
+  }
+}
+
+float minX, maxX; // store the bounding box of all points
+float minY, maxY;
+int minPopulation, maxPopulation;
+int minDensity, maxDensity;
+int numPoints; // total number of places seen
+
+void parseInfo(String line) { // Parse one line
+  String infoString = line.substring(2); // remove the #
+  String[] pieces = split(infoString, ',');
+  numPoints = int(pieces[0]);
+  minX = float(pieces[1]);
+  maxX = float(pieces[2]);
+  minY = float(pieces[3]);
+  maxY = float(pieces[4]);
+  minPopulation = int(pieces[5]);
+  maxPopulation = int(pieces[6]);
+  minDensity = int(pieces[7]);
+  maxDensity = int(pieces[8]);
+}
+
+class Place {
+  int postalCode;
+  String name;
+  float x;
+  float y;
+  float population;
+  float density;
+
+  void draw() {
+    color black = color(0);
+    float x = map(this.x, minX, maxX, 0, 800);
+    float y = map(this.y, minY, maxY, 0, 800);
+    if (this.population == 0) {
+      set((int)x, (int)y, black);
+    }
+    else {
+      int d = int(10 * this.population / maxPopulation);
+      if(d < 1){
+        d = 1;
+      }
+      ellipse(int(x),int(y), d, d);
+    }
+  }
+
+  // Put a drawing function here and call it from the main drawing loop
+}
+
