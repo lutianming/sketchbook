@@ -10,9 +10,11 @@ void draw() {
   color black = color(0);
   for (int i = 0; i < numPoints; ++i) {
     Place p = places[i];
-    p.draw();
+    if(p.population >= minPopulationDisplay){
+      p.draw();
+    }
   }
-  drawPos();
+  drawInfos();
 }
 
 Place places[];
@@ -36,11 +38,17 @@ void readData() {
   }
 }
 
+
+//Data related variables
 float minX, maxX; // store the bounding box of all points
 float minY, maxY;
 int minPopulation, maxPopulation;
 int minDensity, maxDensity;
 int numPoints; // total number of places seen
+//Display related variable
+int minPopulationDisplay = 10000;
+Place highlighted_place = null;
+Place selected_place = null;
 
 void parseInfo(String line) { // Parse one line
   String infoString = line.substring(2); // remove the #
@@ -63,7 +71,10 @@ class Place {
   float y;
   float population;
   float density;
-  private int w;
+
+  boolean highlighted;
+  boolean selected;
+  int w;
 
   Place(int postalCode, String name, float x, float y,
         float population, float density){
@@ -90,21 +101,107 @@ class Place {
     }
   }
 
+  boolean contains(int x, int y){
+    float dx = this.x - x;
+    float dy = this.y - y;
+    float d = sqrt(pow(dx, 2) + pow(dy, 2));
+    int bonus = 1;
+    if(d <= (this.w / 2.0 + bonus)){
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+
   void draw() {
     color black = color(0);
-    stroke(#000000);
-    fill(#1100AA);
     if(this.w == 1){
       set(int(x), int(y), black);
     }else{
+      if(this.highlighted == true){
+        fill(#FF0000);
+      }else{
+        fill(#000000);
+      }
       ellipse(int(this.x),int(this.y), this.w, this.w);
     }
+  }
+}
+
+void drawInfos(){
+  fill(#000000);
+  textSize(10);
+  //text("x:"+mouseX+",y:"+mouseY, 20, 20);
+  text("Display population about " + minPopulationDisplay, 20, 20);
+  Place p = highlighted_place;
+  if(p != null){
+    noStroke();
+    fill(#0000FF, 50);
+    float w = textWidth(p.name);
+    rect(p.x+p.w/2, p.y+p.w/2, w, -10);
+    fill(#000000);
+    //    textAlign(RIGHT, TOP);
+    text(p.name, p.x+p.w/2, p.y+p.w/2);
 
   }
 }
 
-void drawPos(){
-  fill(#000000);
-  textSize(10);
-  text("x:"+mouseX+",y:"+mouseY, 20, 20);
+Place pick(int x, int y){
+  for (int i = numPoints-1; i >= 0; i--) {
+    Place p = places[i];
+    if(p.population < minPopulationDisplay){
+      continue;
+    }
+    if(p.contains(x, y)){
+      return p;
+    }
+  }
+  return null;
+}
+
+void keyPressed(){
+  if(key == CODED){
+    if(keyCode == UP){
+      if(minPopulationDisplay < 500000){
+        minPopulationDisplay = minPopulationDisplay * 2;
+      }
+    }
+    else if(keyCode == DOWN){
+      if(minPopulationDisplay >= 2){
+        minPopulationDisplay = minPopulationDisplay / 2;
+      }
+    }
+  }
+  redraw();
+}
+
+void mouseMoved(){
+  Place p = pick(mouseX, mouseY);
+  if(p == null){
+    if(highlighted_place != null){
+      highlighted_place.highlighted = false;
+    }
+    highlighted_place = null;
+  }
+  else{
+    if(highlighted_place == null){
+      p.highlighted = true;
+      highlighted_place = p;
+      //      println("x:"+mouseX+", y:"+mouseY + ", city:" + p.name);
+    }else if(p.name != highlighted_place.name){
+      p.highlighted = true;
+      highlighted_place.highlighted = false;
+      highlighted_place = p;
+      //      println("x:"+mouseX+", y:"+mouseY + ", city:" + p.name);
+    }
+  }
+}
+
+void mouseClicked(){
+  if(mouseButton == LEFT and highlighted_place != null){
+    Place p = highlighted_place;
+    p.selected = true;
+    selected_place = p;
+  }
 }
