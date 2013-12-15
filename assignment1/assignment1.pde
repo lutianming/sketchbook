@@ -1,13 +1,16 @@
+/*
+  Author: Tianming Lu
+  Code for lab1 and lab2
+*/
 void setup() {
   size(800, 800);
+  noStroke();
+  colorMode(HSB, 360, 100, 100, 100);
   readData();
-  //labelFont = loadFont("/* font filename from above */");
-  //textFont(labelFont, 32);
 }
 
 void draw() {
-  background(255);
-  color black = color(0);
+  background(0,0,100);
   for (int i = 0; i < numPoints; ++i) {
     Place p = places[i];
     if(p.population >= minPopulationDisplay){
@@ -45,10 +48,15 @@ float minY, maxY;
 int minPopulation, maxPopulation;
 int minDensity, maxDensity;
 int numPoints; // total number of places seen
+
 //Display related variable
 int minPopulationDisplay = 10000;
+float powMinPopulation, powMaxPopulation;
+float sqrtMinDensity, sqrtMaxDensity;
 Place highlighted_place = null;
 Place selected_place = null;
+ArrayList<Place> highlighted_places = null;
+
 
 void parseInfo(String line) { // Parse one line
   String infoString = line.substring(2); // remove the #
@@ -60,8 +68,12 @@ void parseInfo(String line) { // Parse one line
   maxY = float(pieces[4]);
   minPopulation = int(pieces[5]);
   maxPopulation = int(pieces[6]);
+  powMinPopulation = pow(minPopulation, 0.7);
+  powMaxPopulation = pow(maxPopulation, 0.7);
   minDensity = int(pieces[7]);
   maxDensity = int(pieces[8]);
+  sqrtMinDensity = sqrt(minDensity);
+  sqrtMaxDensity = sqrt(maxDensity);
 }
 
 class Place {
@@ -74,7 +86,8 @@ class Place {
 
   boolean highlighted;
   boolean selected;
-  int w;
+  int w; //width
+  int b; //brightness
 
   Place(int postalCode, String name, float x, float y,
         float population, float density){
@@ -84,21 +97,23 @@ class Place {
     this.y = y;
     this.population = population;
     this.density = density;
-    if (this.population < 20000) {
-      //still not a city
-      this.w = 1;
-    }
-    else if(this.population < 100000){
-      //city
-      this.w = 5;
-    }
-    else if(this.population < 1000000){
-      //big city
-      this.w = 10;
-    } else{
-      //super big city
-      this.w = 20;
-    }
+    this.w = int(map(pow(population, 0.7), powMinPopulation, powMaxPopulation, 0, 100));
+    this.b = int(map(sqrt(density), sqrtMinDensity, sqrtMaxDensity, 80, 0));
+    // if (this.population < 20000) {
+    //   //still not a city
+    //   this.w = 1;
+    // }
+    // else if(this.population < 100000){
+    //   //city
+    //   this.w = 5;
+    // }
+    // else if(this.population < 1000000){
+    //   //big city
+    //   this.w = 10;
+    // } else{
+    //   //super big city
+    //   this.w = 20;
+    // }
   }
 
   boolean contains(int x, int y){
@@ -115,35 +130,86 @@ class Place {
   }
 
   void draw() {
-    color black = color(0);
-    if(this.w == 1){
-      set(int(x), int(y), black);
+    color c = color(270,80,80);
+    if(this.w < 2){
+      set(int(x), int(y), c);
     }else{
       if(this.highlighted == true){
-        fill(#FF0000);
+        fill(0,100,100, 100-int(this.w*0.8));
       }else{
-        fill(#000000);
+        fill(270,80,this.b, 100-int(this.w*0.8));
       }
-      ellipse(int(this.x),int(this.y), this.w, this.w);
+      ellipse(int(this.x),int(this.y),this.w, this.w);
     }
   }
 }
 
 void drawInfos(){
-  fill(#000000);
-  textSize(10);
+  fill(0, 0, 0);
+  textSize(15);
   //text("x:"+mouseX+",y:"+mouseY, 20, 20);
-  text("Display population about " + minPopulationDisplay, 20, 20);
-  Place p = highlighted_place;
-  if(p != null){
-    noStroke();
-    fill(#0000FF, 50);
-    float w = textWidth(p.name);
-    rect(p.x+p.w/2, p.y+p.w/2, w, -10);
-    fill(#000000);
-    //    textAlign(RIGHT, TOP);
-    text(p.name, p.x+p.w/2, p.y+p.w/2);
+  text("Display population above " + minPopulationDisplay, 20, 20);
 
+
+  // Place p = highlighted_place;
+  // if(p != null){
+  //   fill(60,100,100, 50);
+  //   textSize(15);
+  //   float w = textWidth(p.name);
+  //   rect(p.x+p.w/2, p.y-p.w/2, w, -15);
+  //   fill(0, 0, 0);
+  //   text(p.name, p.x+p.w/2, p.y-p.w/2);
+  // }
+  if(highlighted_places != null && highlighted_places.size()>= 1){
+    int n = highlighted_places.size();
+    //get best display position
+    Place place = highlighted_places.get(0);
+    float maxX = place.x+place.w/2;
+    float minY = place.y;
+    float maxY = place.y;
+    for(Place p: highlighted_places){
+      if(p.x+p.w/2 > maxX){
+        maxX = p.x+p.w/2;
+      }
+      if(p.y < minY){
+        minY = p.y;
+      }
+      if(p.y > maxY){
+        maxY = p.y;
+      }
+    }
+
+    int hight = 15;
+    int x = int(maxX);
+    int y = int((minY+maxY)/2 - hight*n/2) ;
+    if(y < hight){
+      y = hight;
+    }
+    for(int i = 0; i < highlighted_places.size(); i++){
+      Place p = highlighted_places.get(i);
+      color c;
+      if(i % 3 == 0){
+        c = color(60,80,80,80);
+      }
+      else if(i % 3 == 1){
+        c = color(120,80,80,80);
+      }
+      else{
+        c = color(180,80,80,80);
+      }
+      stroke(c);
+      fill(c);
+      //line from circle center to text
+      line(p.x, p.y, x, y+i*hight-hight/2);
+      noStroke();
+      //rect round text
+      textSize(hight);
+      float w = textWidth(p.name);
+      rect(x, y+i*hight+3, w, -hight);
+      //text
+      fill(0, 0, 0);
+      text(p.name, x, y+i*hight);
+    }
   }
 }
 
@@ -159,6 +225,21 @@ Place pick(int x, int y){
   }
   return null;
 }
+
+ArrayList<Place> pickAll(int x, int y){
+  ArrayList<Place> placeList = new ArrayList<Place>();
+  for (int i = 0; i < numPoints; i++) {
+    Place p = places[i];
+    if(p.population < minPopulationDisplay){
+      continue;
+    }
+    if(p.contains(x, y)){
+      placeList.add(p);
+    }
+  }
+  return placeList;
+}
+
 
 void keyPressed(){
   if(key == CODED){
@@ -178,6 +259,8 @@ void keyPressed(){
 
 void mouseMoved(){
   Place p = pick(mouseX, mouseY);
+  highlighted_places = pickAll(mouseX, mouseY);
+
   if(p == null){
     if(highlighted_place != null){
       highlighted_place.highlighted = false;
@@ -199,7 +282,7 @@ void mouseMoved(){
 }
 
 void mouseClicked(){
-  if(mouseButton == LEFT and highlighted_place != null){
+  if(mouseButton == LEFT && highlighted_place != null){
     Place p = highlighted_place;
     p.selected = true;
     selected_place = p;
